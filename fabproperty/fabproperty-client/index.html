@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="./styles.css">
+
+    <title>Property Manager Using Hyperledger Fabric</title>
+</head>
+<body>
+    <div class="text-center">
+        <h1>
+            Property Manager
+        </h1>
+        <button onclick="getAll()">Get All Property</button>
+        <span>||</span>
+        
+        <input id="search-input" type="text">
+        &nbsp;
+        &nbsp;
+            Search by:
+            <input class="form-check-input" type="radio" name="searchBy" id="radioId">
+                ID
+            <input class="form-check-input" type="radio" name="searchBy" id="radioCity" checked>
+                City Name
+        &nbsp;
+        &nbsp;
+        <button onclick="search()">Search</button>
+        <div id="show-property"></div>
+    </div>
+
+    <div class="text-center form-container">
+        <h3 >Add New Property</h3>
+        <form id="createForm" action="" name="createProperty">
+            <div>
+                <label for="">Property ID</label>
+                <input name="key" />
+            </div>
+            
+            <div>
+                <label for="">Address</label>
+                <input name="address" />
+            </div>
+
+            <div>
+                <label for="">City Name</label>
+                <input name="city" />
+            </div>
+
+            <div>
+                <label for="">Property Size</label>
+                <input name="property_size" />
+            </div>
+
+            <div>
+                <label for="">Owner</label>
+                <input name="owner_name" />
+            </div>
+
+            <div>
+                <button type="submit">Create</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="text-center form-container">
+        <h3 >Update Protperty Details</h3>
+        <form id="updateForm" action="" name="updateOwner">
+            <div>
+                <label for="">Property ID</label>
+                <input name="key" />
+            </div>
+            
+            <div>
+                <label for="">Address</label>
+                <input name="address" />
+            </div>
+
+            <div>
+                <label for="">City Name</label>
+                <input name="city" />
+            </div>
+            <div>
+                <label for="">Property Size</label>
+                <input name="property_size" />
+            </div>
+            <div>
+                <label for="">Owner</label>
+                <input name="owner_name" />
+            </div>
+            <div>
+                <button type="submit">Update</button>
+            </div>
+        </form>
+    </div>
+    
+    <script>
+
+        // CREATING NEW PROPERTY
+        const createForm = document.getElementById('createForm')
+
+        // THIS IS AN EVENT LISTENER WHICH WILL RUN WHEN WE CLICK THE CREATE BUTTON
+        createForm.addEventListener("submit", function(event) {
+            event.preventDefault()
+            const bodyParam = new URLSearchParams( new FormData(createForm) )
+            
+                //CALLING CREATE API
+                fetch('http://localhost:3000/create', {
+                    method: 'POST',
+                    body: bodyParam
+                })
+                .then(res => {
+                    return res.json()
+                })
+                .then( parsedRes => {
+                    alert(parsedRes.message)
+                })
+                .catch(err => {
+                    console.error({ err })
+                })
+        });
+
+        // UPDATE: CHANGING Property OWNER
+        const updateForm = document.getElementById('updateForm')
+
+        // THIS IS AN EVENT LISTENER WHICH WILL RUN WHEN WE CLICK THE UPDATE BUTTON
+        updateForm.addEventListener("submit", function(event) {
+            event.preventDefault()
+            const bodyParam = new URLSearchParams( new FormData(updateForm) )
+            
+                //CALLING UPDATE API
+                fetch('http://localhost:3000/update', {
+                    method: 'POST',
+                    body: bodyParam
+                })
+                .then(res => {
+                    if(res.status !== 200){
+                        alert('Unable to update')
+                        return
+                    }
+                    return res.json()
+                })
+                .then( parsedRes => {
+                    alert( parsedRes.message )
+                    getAll()
+                })
+                .catch(err => {
+                    alert(err.message)
+                    console.error({ err })
+                })
+        });
+
+
+        //SEARCH DATA
+        function search(){
+            // extracting value from input field
+            const value = document.getElementById('search-input').value
+            const radioIdState = document.getElementById("radioId").checked
+            radioIdState ? getAll("key="+value) : getAll("city="+value)
+            // const radioCity = document.getElementById("radioCity")
+            // getAll( value )
+        }
+
+        // function searchByID(id){
+        //     console.log("id");
+        // }
+
+        // function searchByCity(city){
+        //     console.log("city");
+        // }
+        
+        // GETTING ALL Property DATA FROM API
+        function getAll( queryWithKeyValuePair ){
+            const api = queryWithKeyValuePair ? 'http://localhost:3000/get-property?' + queryWithKeyValuePair :  'http://localhost:3000/get-property'
+            fetch(api)
+                .then( res => {
+                    return res.json();
+                })
+                .then( parsedRes => {
+                    console.log(parsedRes)
+
+                    let propertyMarkup = ''; 
+                    parsedRes.forEach( item => {
+                        
+                            
+                                if(!Array.isArray(item.Record)){
+                                    propertyMarkup = propertyMarkup +
+                                    `<div class="property-item">`+
+                                        `<p>Key: ${ item.Key }</p>
+                                        <p>Address: ${ item.Record.address }</p>
+                                        <p>City: ${ item.Record.city }</p>
+                                        <p>Size: ${ item.Record.property_size }</p>
+                                        <p>Owner: ${ item.Record.owner_name }</p>`+
+                                    `</div>`
+                                }
+
+                                else{
+                                    propertyMarkup = `<div class="property-item">`+`<p>Key: ${ item.Key }</p>`
+
+                                    // item.Record.forEach( eachItem =>{
+                                    //     string_element = 
+                                    //         `<p>Address: ${ eachItem.address }</p>
+                                    //         <p>City: ${ eachItem.city }</p>
+                                    //         <p>Size: ${ eachItem.property_size }</p>
+                                    //         <p>Owner: ${ eachItem.owner_name }</p>`+
+                                    //         `<h5>ARCHIEVED DETAILS</h5>`
+
+                                    // })
+
+                                    for(let i = 0; i < item.Record.length; i++){
+                                        if(i==0){
+                                            string_element = 
+                                            `<p>Address: ${ item.Record[i].address }</p>
+                                            <p>City: ${ item.Record[i].city }</p>
+                                            <p>Size: ${ item.Record[i].property_size }</p>
+                                            <p>Owner: ${ item.Record[i].owner_name }</p>`+
+                                            `<h5>ARCHIEVED DETAILS:</h5>`
+                                        }else{
+                                            string_element = 
+                                            `<p>Address: ${ item.Record[i].address }</p>
+                                            <p>City: ${ item.Record[i].city }</p>
+                                            <p>Size: ${ item.Record[i].property_size }</p>
+                                            <p>Owner: ${ item.Record[i].owner_name }</p>`
+                                        }
+                                        propertyMarkup += string_element
+                                    }
+
+                                    propertyMarkup += `</div>`
+                                }
+                    })
+                    // getting the html container with id=show-property
+                    const propertyContainer = document.getElementById('show-property')
+
+                    //CLEANING EXISTING property HTML NODE/ELEMENT
+                    while (propertyContainer.hasChildNodes()) {
+                        propertyContainer.removeChild(propertyContainer.firstChild);
+                    }
+
+                    // Adding new property data markup
+                    propertyContainer.insertAdjacentHTML('beforeend', propertyMarkup)
+                })
+                .catch(err => {
+                    alert('Operation failed')
+                    console.error({ err })
+                })
+        }
+
+        
+    </script>
+</body>
+</html>
